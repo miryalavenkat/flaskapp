@@ -36,3 +36,17 @@ jobs:
         run: docker build  -t ${{ env.REGISTRY }}/${{ secrets.REGISTRY_USERNAME }}/flaskapp:${{ github.sha }} .
       - name: pushing image to github package
         run: docker push ${{ env.REGISTRY }}/${{ secrets.REGISTRY_USERNAME }}/flaskapp:${{ github.sha }}
+
+      - name: ssh connect to ec2 server
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_KEY }}
+          REMOTE_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          echo "$SSH_PRIVATE_KEY" > ~/ssh_private_key
+          chmod 400 ~/ssh_private_key
+          ssh -i ~/ssh_private_key -o StrictHostKeyChecking=no ubuntu@$REMOTE_HOST '
+            
+            docker login ${{ env.REGISTRY }} -u ${{ secrets.REGISTRY_USERNAME }} --password ${{ secrets.REGISTRY_TOKEN }}
+            docker pull ${{ env.REGISTRY }}/${{ secrets.REGISTRY_USERNAME }}/flaskapp:${{ github.sha }}
+            docker run -itd -p 5000:5000 ${{ env.REGISTRY }}/${{ secrets.REGISTRY_USERNAME }}/flaskapp:${{ github.sha }}
+            '

@@ -1,0 +1,43 @@
+name: CI/CD for Flask Application
+
+on:
+  push:
+    branches:
+      - dev  # Adjust this branch name if you are using a different main branch
+env:
+  REGISTRY: ghcr.io
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests
+        run: pytest
+
+      - name: Build and deploy
+        env:
+          FLASK_APP: app.py
+          FLASK_ENV: production
+        run: |
+          flask run &
+          sleep 5  # Give the Flask app some time to start
+          pytest --runslow --cov-report term-missing --cov=app
+          # Add your deployment commands here
+          # For example, you could use scp or rsync to copy the files to your server
+      - name: login gihub package
+        run: docker login ${{ env.REGISTRY }} -u ${{ secrets.REGISTRY_USERNAME }} --password ${{ secrets.REGISTRY_TOKEN }}
+      - name: create build image
+        run: docker build  -t ${{ env.REGISTRY }}/${{ secrets.REGISTRY_USERNAME }}/flaskapp:${{ github.sha }} .
+      - name: pushing image to github package
+        run: docker push ${{ env.REGISTRY }}/${{ secrets.REGISTRY_USERNAME }}/flaskapp:${{ github.sha }}

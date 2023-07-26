@@ -48,5 +48,5 @@ jobs:
             
             docker login ${{ env.REGISTRY }} -u ${{ secrets.REGISTRY_USERNAME }} --password ${{ secrets.REGISTRY_TOKEN }}
             docker pull ${{ env.REGISTRY }}/${{ secrets.REGISTRY_USERNAME }}/flaskapp:${{ github.sha }}
-            docker run -itd -p 5000:5000 ${{ env.REGISTRY }}/${{ secrets.REGISTRY_USERNAME }}/flaskapp:${{ github.sha }}
+            docker run -itd -p 80:5000 ${{ env.REGISTRY }}/${{ secrets.REGISTRY_USERNAME }}/flaskapp:${{ github.sha }}
             '
